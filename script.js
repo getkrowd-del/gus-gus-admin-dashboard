@@ -1,13 +1,23 @@
 var ROWS = [];
 var sortKey = 'Timestamp', sortDir = -1;
-var ENDPOINT = '/api/public/landing-pages/5432/sheet-data';
+var ENDPOINTS = [
+  'https://paymegpt.com/api/public/landing-pages/5432/sheet-data',
+  '/api/public/landing-pages/5432/sheet-data'
+];
+
+function tryEndpoints(list, i){
+  i = i || 0;
+  if(i >= list.length) return Promise.reject(new Error('all endpoints failed'));
+  return fetch(list[i])
+    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .catch(function(){ return tryEndpoints(list, i+1); });
+}
 
 function loadData(){
   document.getElementById('err').style.display='none';
   var host = document.getElementById('tableHost');
   host.innerHTML = '<div class="loading">Loading signups…</div>';
-  fetch(ENDPOINT)
-    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+  tryEndpoints(ENDPOINTS)
     .then(function(json){
       ROWS = normalize(json);
       render();
@@ -15,7 +25,7 @@ function loadData(){
     .catch(function(e){
       var err=document.getElementById('err');
       err.style.display='block';
-      err.textContent='Could not load sheet data ('+e.message+'). Make sure the sheet is linked to this page.';
+      err.textContent='Could not load sheet data. Open the dashboard at its paymegpt.com link (https://paymegpt.com/p/Z7zjMGzuk) so it can reach your sheet.';
       host.innerHTML='<div class="empty">No data available.</div>';
     });
 }
